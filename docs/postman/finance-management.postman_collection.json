@@ -1,0 +1,463 @@
+{
+  "info": {
+    "_postman_id": "finance-management-api-v1",
+    "name": "Finance Management API",
+    "description": "Personal Finance Management API — Phase 1 (Auth + Users)\n\n## Setup\n1. Import this collection into Postman\n2. Set the `baseUrl` variable to `http://localhost:3000/api` (already done)\n3. Run **Register** or **Login** — the `token` variable is saved automatically\n4. All protected routes use `{{token}}` automatically\n\n## Variables\n- `baseUrl` — API base URL (default: http://localhost:3000/api)\n- `token` — JWT access token (auto-saved after register/login)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string",
+      "description": "Base URL of the API. Change this to your deployed URL when testing in staging/production."
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token. Automatically saved after a successful login or register request."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Registration, login, and token management.\n\nAfter calling Register or Login, the `token` variable is automatically saved so all protected routes work without manual copy-paste.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Automatically save the token after a successful registration",
+                  "if (pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('token', body.data.accessToken);",
+                  "    console.log('Token saved:', body.data.accessToken.substring(0, 20) + '...');",
+                  "}",
+                  "",
+                  "pm.test('Status is 201 Created', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.data).to.have.property('accessToken');",
+                  "    pm.expect(body.data.accessToken).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Response has user object (no password)', () => {",
+                  "    const body = pm.response.json();",
+                  "    const user = body.data.user;",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user).to.have.property('email');",
+                  "    pm.expect(user).to.have.property('firstName');",
+                  "    pm.expect(user).to.have.property('lastName');",
+                  "    pm.expect(user).to.not.have.property('password');",
+                  "});",
+                  "",
+                  "pm.test('Response is wrapped in standard envelope', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('success', true);",
+                  "    pm.expect(body).to.have.property('data');",
+                  "    pm.expect(body).to.have.property('timestamp');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Creates a new user account.\n\n**Returns:** JWT access token + user object (no password field)\n\n**Auto-saves** the token to the `token` collection variable so you don't need to copy-paste it.\n\n**Validation rules:**\n- `email` — must be a valid email format\n- `password` — minimum 8 characters, maximum 100\n- `firstName` — required, max 50 characters\n- `lastName` — required, max 50 characters\n\n**Error cases:**\n- `400` — validation failed (see error message for which field)\n- `409` — email is already registered"
+          },
+          "response": [
+            {
+              "name": "Success — 201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzA5MTE2ODAwLCJleHAiOjE3MDk3MjE2MDB9.signature\",\n    \"user\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"email\": \"john.doe@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"createdAt\": \"2026-02-28T10:00:00.000Z\",\n      \"updatedAt\": \"2026-02-28T10:00:00.000Z\"\n    }\n  },\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "Error — 409 Email Already Exists",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"statusCode\": 409,\n  \"message\": \"A user with this email already exists\",\n  \"error\": \"ConflictException\",\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\",\n  \"path\": \"/api/auth/register\"\n}"
+            },
+            {
+              "name": "Error — 400 Validation Failed",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"short\",\n  \"firstName\": \"\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\"email must be an email\", \"password must be longer than or equal to 8 characters\", \"firstName should not be empty\"],\n  \"error\": \"Bad Request\",\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\",\n  \"path\": \"/api/auth/register\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Automatically save the token after a successful login",
+                  "if (pm.response.code === 200) {",
+                  "    const body = pm.response.json();",
+                  "    pm.collectionVariables.set('token', body.data.accessToken);",
+                  "    console.log('Token saved:', body.data.accessToken.substring(0, 20) + '...');",
+                  "}",
+                  "",
+                  "pm.test('Status is 200 OK', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has accessToken', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.data).to.have.property('accessToken');",
+                  "    pm.expect(body.data.accessToken).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('Response has user object (no password)', () => {",
+                  "    const body = pm.response.json();",
+                  "    const user = body.data.user;",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticates an existing user.\n\n**Returns:** JWT access token + user object (no password field)\n\n**Auto-saves** the token to the `token` collection variable.\n\n**Security note:** Both wrong email and wrong password return the same `401 Invalid credentials` error. This is intentional — it prevents attackers from learning which emails are registered (user enumeration attack).\n\n**Error cases:**\n- `400` — missing or invalid email format\n- `401` — wrong email or wrong password (same message for both)"
+          },
+          "response": [
+            {
+              "name": "Success — 200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwiaWF0IjoxNzA5MTE2ODAwLCJleHAiOjE3MDk3MjE2MDB9.signature\",\n    \"user\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"email\": \"john.doe@example.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"createdAt\": \"2026-02-28T10:00:00.000Z\",\n      \"updatedAt\": \"2026-02-28T10:00:00.000Z\"\n    }\n  },\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "Error — 401 Invalid Credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"WrongPassword\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"statusCode\": 401,\n  \"message\": \"Invalid credentials\",\n  \"error\": \"UnauthorizedException\",\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\",\n  \"path\": \"/api/auth/login\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User profile endpoints. All routes require a valid JWT token.\n\nThe `token` variable is automatically set after Register or Login — no manual copy-paste needed.",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns user profile without password', () => {",
+                  "    const body = pm.response.json();",
+                  "    const user = body.data;",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user).to.have.property('email');",
+                  "    pm.expect(user).to.have.property('firstName');",
+                  "    pm.expect(user).to.have.property('lastName');",
+                  "    pm.expect(user).to.have.property('createdAt');",
+                  "    pm.expect(user).to.not.have.property('password');",
+                  "});",
+                  "",
+                  "pm.test('Response is wrapped in standard envelope', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('success', true);",
+                  "    pm.expect(body).to.have.property('timestamp');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Returns the authenticated user's profile.\n\n**Requires:** `Authorization: Bearer <token>` header (auto-filled from `{{token}}`)\n\n**Returns:** User object without password\n\n**Error cases:**\n- `401` — missing token, invalid token, or expired token"
+          },
+          "response": [
+            {
+              "name": "Success — 200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"email\": \"john.doe@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"createdAt\": \"2026-02-28T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-28T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "Error — 401 Unauthorized (missing/invalid token)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "me"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"statusCode\": 401,\n  \"message\": \"Unauthorized\",\n  \"error\": \"UnauthorizedException\",\n  \"timestamp\": \"2026-02-28T10:00:00.000Z\",\n  \"path\": \"/api/users/me\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns updated user without password', () => {",
+                  "    const body = pm.response.json();",
+                  "    const user = body.data;",
+                  "    pm.expect(user).to.have.property('id');",
+                  "    pm.expect(user).to.have.property('email');",
+                  "    pm.expect(user).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Updates the authenticated user's profile. All fields are optional — only send what you want to change.\n\n**Requires:** `Authorization: Bearer <token>` header (auto-filled from `{{token}}`)\n\n**Updatable fields** (all optional):\n- `firstName` — max 50 characters\n- `lastName` — max 50 characters\n- `email` — must be unique across all users\n- `password` — min 8 characters (will be re-hashed automatically)\n\n**Error cases:**\n- `400` — validation failed\n- `401` — missing or invalid token\n- `409` — new email is already taken by another account"
+          },
+          "response": [
+            {
+              "name": "Success — 200 OK (firstName updated)",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {"key": "Authorization", "value": "Bearer {{token}}"},
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"Jane\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"email\": \"john.doe@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\",\n    \"createdAt\": \"2026-02-28T10:00:00.000Z\",\n    \"updatedAt\": \"2026-02-28T11:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-02-28T11:00:00.000Z\"\n}"
+            },
+            {
+              "name": "Error — 409 Email Already Taken",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {"key": "Authorization", "value": "Bearer {{token}}"},
+                  {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"someone.else@example.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "me"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"statusCode\": 409,\n  \"message\": \"A user with this email already exists\",\n  \"error\": \"ConflictException\",\n  \"timestamp\": \"2026-02-28T11:00:00.000Z\",\n  \"path\": \"/api/users/me\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
