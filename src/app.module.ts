@@ -22,10 +22,12 @@ import appConfig from './config/app.config.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 
+// Phase 2 — Finance Core
+import { WalletsModule } from './modules/wallets/wallets.module.js';
+import { CategoriesModule } from './modules/categories/categories.module.js';
+import { TransactionsModule } from './modules/transactions/transactions.module.js';
+
 // Future phases — uncomment as we build them
-// import { AccountsModule } from './modules/accounts/accounts.module.js';
-// import { TransactionsModule } from './modules/transactions/transactions.module.js';
-// import { CategoriesModule } from './modules/categories/categories.module.js';
 // import { BudgetsModule } from './modules/budgets/budgets.module.js';
 
 @Module({
@@ -46,13 +48,15 @@ import { AuthModule } from './modules/auth/auth.module.js';
     PrismaModule,
 
     // ---- Phase 1: Auth & Users ----
-    UsersModule,  // Routes: GET /api/users/me, PATCH /api/users/me
-    AuthModule,   // Routes: POST /api/auth/register, POST /api/auth/login
+    UsersModule,        // Routes: GET /api/users/me, PATCH /api/users/me
+    AuthModule,         // Routes: POST /api/auth/register, POST /api/auth/login
+
+    // ---- Phase 2: Finance Core ----
+    WalletsModule,      // Routes: CRUD /api/wallets
+    CategoriesModule,   // Routes: CRUD /api/categories
+    TransactionsModule, // Routes: CRUD /api/transactions
 
     // ---- Future modules ----
-    // AccountsModule,
-    // TransactionsModule,
-    // CategoriesModule,
     // BudgetsModule,
   ],
   controllers: [],

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "finance-management-api-v1",
     "name": "Finance Management API",
-    "description": "Personal Finance Management API — Phase 1 (Auth + Users)\n\n## Setup\n1. Import this collection into Postman\n2. Set the `baseUrl` variable to `http://localhost:3000/api` (already done)\n3. Run **Register** or **Login** — the `token` variable is saved automatically\n4. All protected routes use `{{token}}` automatically\n\n## Variables\n- `baseUrl` — API base URL (default: http://localhost:3000/api)\n- `token` — JWT access token (auto-saved after register/login)",
+    "description": "Personal Finance Management API — Phase 1 (Auth + Users) + Phase 2 (Wallets, Categories, Transactions)\n\n## Setup\n1. Import this collection into Postman\n2. Set the `baseUrl` variable to `http://localhost:3000/api` (already done)\n3. Run **Register** or **Login** — the `token` variable is saved automatically\n4. All protected routes use `{{token}}` automatically\n5. After creating a wallet/category, copy the `id` into the `walletId` / `categoryId` collection variables for convenience\n\n## Variables\n- `baseUrl` — API base URL (default: http://localhost:3000/api)\n- `token` — JWT access token (auto-saved after register/login)\n- `walletId` — set manually after creating a wallet\n- `categoryId` — set manually after creating a category",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,6 +17,18 @@
       "value": "",
       "type": "string",
       "description": "JWT access token. Automatically saved after a successful login or register request."
+    },
+    {
+      "key": "walletId",
+      "value": "",
+      "type": "string",
+      "description": "Set this after creating a wallet. Used as a convenience variable in transaction requests."
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string",
+      "description": "Set this after creating a category. Used as a convenience variable in transaction requests."
     }
   ],
   "item": [
@@ -456,6 +468,257 @@
               "body": "{\n  \"statusCode\": 409,\n  \"message\": \"A user with this email already exists\",\n  \"error\": \"ConflictException\",\n  \"timestamp\": \"2026-02-28T11:00:00.000Z\",\n  \"path\": \"/api/users/me\"\n}"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Wallets",
+      "description": "Financial wallet (account) management. All routes require JWT.\n\nAfter creating a wallet, copy its `id` into the `walletId` collection variable.",
+      "item": [
+        {
+          "name": "Create Wallet",
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 201) { const b = pm.response.json(); pm.collectionVariables.set('walletId', b.data.id); console.log('walletId saved:', b.data.id); }", "pm.test('Status 201', () => pm.response.to.have.status(201));", "pm.test('Has balance of 0', () => { const b = pm.response.json(); pm.expect(b.data.balance).to.equal('0'); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Main Checking\",\n  \"type\": \"CHECKING\",\n  \"currency\": \"USD\",\n  \"description\": \"Primary day-to-day account\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/wallets", "host": ["{{baseUrl}}"], "path": ["wallets"]},
+            "description": "Creates a wallet. Balance starts at 0 and is updated automatically by transactions.\n\nWallet types: CHECKING, SAVINGS, CREDIT_CARD, INVESTMENT, CASH, OTHER\n\n**Auto-saves** the wallet `id` to the `walletId` variable."
+          }
+        },
+        {
+          "name": "Create Savings Wallet",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Emergency Fund\",\n  \"type\": \"SAVINGS\",\n  \"currency\": \"USD\",\n  \"description\": \"3-month emergency reserve\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/wallets", "host": ["{{baseUrl}}"], "path": ["wallets"]},
+            "description": "Create a second wallet for transfer testing. Copy the returned `id` for use in TRANSFER transactions."
+          }
+        },
+        {
+          "name": "List Wallets",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Returns array', () => { const b = pm.response.json(); pm.expect(b.data).to.be.an('array'); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/wallets", "host": ["{{baseUrl}}"], "path": ["wallets"]},
+            "description": "Returns all active wallets for the authenticated user, ordered by name."
+          }
+        },
+        {
+          "name": "Get Wallet by ID",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/wallets/{{walletId}}", "host": ["{{baseUrl}}"], "path": ["wallets", "{{walletId}}"]},
+            "description": "Uses the `walletId` variable (auto-set when you created a wallet)."
+          }
+        },
+        {
+          "name": "Update Wallet",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"description\": \"Updated description\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/wallets/{{walletId}}", "host": ["{{baseUrl}}"], "path": ["wallets", "{{walletId}}"]},
+            "description": "Updates wallet metadata. Balance is NOT updatable here — it's controlled by transactions."
+          }
+        },
+        {
+          "name": "Deactivate Wallet",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "DELETE",
+            "url": {"raw": "{{baseUrl}}/wallets/{{walletId}}", "host": ["{{baseUrl}}"], "path": ["wallets", "{{walletId}}"]},
+            "description": "Soft-deletes the wallet (sets isActive=false). Returns 400 if the wallet has transactions."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Income/expense category management. All routes require JWT.\n\nAfter creating a category, copy its `id` into the `categoryId` collection variable.",
+      "item": [
+        {
+          "name": "Create Income Category",
+          "event": [{"listen": "test", "script": {"exec": ["if (pm.response.code === 201) { const b = pm.response.json(); pm.collectionVariables.set('categoryId', b.data.id); console.log('categoryId saved:', b.data.id); }", "pm.test('Status 201', () => pm.response.to.have.status(201));"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Salary\",\n  \"type\": \"INCOME\",\n  \"color\": \"#4CAF50\",\n  \"icon\": \"💰\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"]},
+            "description": "Creates an INCOME category. **Auto-saves** the `id` to `categoryId` variable."
+          }
+        },
+        {
+          "name": "Create Expense Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Food & Dining\",\n  \"type\": \"EXPENSE\",\n  \"color\": \"#FF5722\",\n  \"icon\": \"🍔\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"]},
+            "description": "Creates an EXPENSE category."
+          }
+        },
+        {
+          "name": "List All Categories",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"]},
+            "description": "Returns all categories for the user, sorted by type then name."
+          }
+        },
+        {
+          "name": "List EXPENSE Categories Only",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/categories?type=EXPENSE", "host": ["{{baseUrl}}"], "path": ["categories"], "query": [{"key": "type", "value": "EXPENSE"}]},
+            "description": "Filter categories by type. Use `type=INCOME` or `type=EXPENSE`."
+          }
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"]}
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"color\": \"#2196F3\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"]}
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "DELETE",
+            "url": {"raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories", "{{categoryId}}"]},
+            "description": "Deletes the category. Transactions referencing it will have categoryId set to NULL (not deleted)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "description": "Financial transaction management. All routes require JWT.\n\n⚠️ Every CREATE/UPDATE/DELETE automatically updates wallet balances.\n\nRecommended test order:\n1. Create two wallets\n2. Create categories (one INCOME, one EXPENSE)\n3. Create INCOME transaction → check wallet balance increased\n4. Create EXPENSE transaction → check balance decreased\n5. Create TRANSFER → check both wallet balances\n6. Update a transaction → verify balance recalculated\n7. Delete a transaction → verify balance reversed",
+      "item": [
+        {
+          "name": "Create INCOME Transaction",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));", "pm.test('Has account info embedded', () => { const b = pm.response.json(); pm.expect(b.data.account).to.have.property('name'); });", "pm.test('toAccount is null for INCOME', () => { const b = pm.response.json(); pm.expect(b.data.toAccount).to.be.null; });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 5000.00,\n  \"type\": \"INCOME\",\n  \"accountId\": \"{{walletId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"date\": \"2026-02-28\",\n  \"description\": \"February salary\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"]},
+            "description": "Creates an INCOME transaction. The wallet balance will increase by the amount.\n\nPre-requisite: Set `walletId` and `categoryId` (INCOME type) variables."
+          }
+        },
+        {
+          "name": "Create EXPENSE Transaction",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 120.50,\n  \"type\": \"EXPENSE\",\n  \"accountId\": \"{{walletId}}\",\n  \"date\": \"2026-02-28\",\n  \"description\": \"Weekly groceries\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"]},
+            "description": "Creates an EXPENSE transaction. Wallet balance decreases by amount. categoryId is optional here."
+          }
+        },
+        {
+          "name": "Create TRANSFER Transaction",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));", "pm.test('Has toAccount embedded', () => { const b = pm.response.json(); pm.expect(b.data.toAccount).to.not.be.null; pm.expect(b.data.toAccount).to.have.property('name'); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 1000.00,\n  \"type\": \"TRANSFER\",\n  \"accountId\": \"REPLACE_WITH_FROM_WALLET_ID\",\n  \"toAccountId\": \"REPLACE_WITH_TO_WALLET_ID\",\n  \"date\": \"2026-02-28\",\n  \"description\": \"Transfer to savings\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"]},
+            "description": "Creates a TRANSFER between two of your wallets.\n\nReplaces both accountId and toAccountId with actual wallet UUIDs.\nNote: TRANSFER cannot have a categoryId."
+          }
+        },
+        {
+          "name": "List All Transactions",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Returns sorted array', () => { const b = pm.response.json(); pm.expect(b.data).to.be.an('array'); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"]},
+            "description": "Returns all transactions for the user, sorted by date descending (newest first)."
+          }
+        },
+        {
+          "name": "List Transactions — Filter by Wallet",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/transactions?walletId={{walletId}}", "host": ["{{baseUrl}}"], "path": ["transactions"], "query": [{"key": "walletId", "value": "{{walletId}}"}]},
+            "description": "Returns transactions where this wallet is either the source OR destination. Useful for showing all activity on one wallet."
+          }
+        },
+        {
+          "name": "List Transactions — Filter by Type",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/transactions?type=EXPENSE", "host": ["{{baseUrl}}"], "path": ["transactions"], "query": [{"key": "type", "value": "EXPENSE"}]},
+            "description": "Filter by INCOME, EXPENSE, or TRANSFER."
+          }
+        },
+        {
+          "name": "List Transactions — Date Range",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/transactions?startDate=2026-02-01&endDate=2026-02-28", "host": ["{{baseUrl}}"], "path": ["transactions"], "query": [{"key": "startDate", "value": "2026-02-01"}, {"key": "endDate", "value": "2026-02-28"}]},
+            "description": "ISO 8601 dates. Inclusive on both ends."
+          }
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/transactions/REPLACE_WITH_TRANSACTION_ID", "host": ["{{baseUrl}}"], "path": ["transactions", "REPLACE_WITH_TRANSACTION_ID"]}
+          }
+        },
+        {
+          "name": "Update Transaction",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Balance recalculated', () => { pm.response.to.have.status(200); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "PATCH",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 5500.00,\n  \"description\": \"February salary + bonus\"\n}", "options": {"raw": {"language": "json"}}},
+            "url": {"raw": "{{baseUrl}}/transactions/REPLACE_WITH_TRANSACTION_ID", "host": ["{{baseUrl}}"], "path": ["transactions", "REPLACE_WITH_TRANSACTION_ID"]},
+            "description": "Updates a transaction. Balance is automatically recalculated using the reverse+apply pattern.\n\nYou can change any field: amount, type, accountId, toAccountId, categoryId, date, description."
+          }
+        },
+        {
+          "name": "Delete Transaction",
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Balance reversed', () => { pm.response.to.have.status(200); });"], "type": "text/javascript"}}],
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+            "method": "DELETE",
+            "url": {"raw": "{{baseUrl}}/transactions/REPLACE_WITH_TRANSACTION_ID", "host": ["{{baseUrl}}"], "path": ["transactions", "REPLACE_WITH_TRANSACTION_ID"]},
+            "description": "Deletes the transaction and reverses its balance effect on the wallet(s)."
+          }
         }
       ]
     }

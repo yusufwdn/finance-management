@@ -10,6 +10,7 @@
 | [Authentication Flow](./auth-flow.md) | How JWT registration/login/protected routes work |
 | [Database Relationships](./database-relationships.md) | Entity diagrams, table relationships, and foreign keys explained |
 | [Phase 1 — Auth Reference](./phase-1-auth.md) | DI deep-dive, request traces, security decisions, API examples |
+| [Phase 2 — Finance Core](./phase-2-finance-core.md) | Wallets, categories, transactions, balance calculation logic |
 | [Postman Collection](./postman/finance-management.postman_collection.json) | Import into Postman — auto-saves JWT token, includes tests |
 
 ---

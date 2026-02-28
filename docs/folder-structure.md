@@ -67,10 +67,28 @@ src/
     │   └── dto/
     │       ├── create-user.dto.ts
     │       └── update-user.dto.ts
-    ├── accounts/           ← Phase 2: Financial account management
-    ├── transactions/       ← Phase 3: Income/expense tracking
-    ├── categories/         ← Phase 4: Transaction categories
-    └── budgets/            ← Phase 5: Spending limit management
+    ├── wallets/            ← ✅ Phase 2: Wallet CRUD (wraps Account model)
+    │   ├── wallets.module.ts
+    │   ├── wallets.controller.ts
+    │   ├── wallets.service.ts
+    │   └── dto/
+    │       ├── create-wallet.dto.ts
+    │       └── update-wallet.dto.ts
+    ├── categories/         ← ✅ Phase 2: Income/expense category labels
+    │   ├── categories.module.ts
+    │   ├── categories.controller.ts
+    │   ├── categories.service.ts
+    │   └── dto/
+    │       ├── create-category.dto.ts
+    │       └── update-category.dto.ts
+    ├── transactions/       ← ✅ Phase 2: Transactions + balance auto-update
+    │   ├── transactions.module.ts
+    │   ├── transactions.controller.ts
+    │   ├── transactions.service.ts   ← Core: balance logic via Prisma $transaction
+    │   └── dto/
+    │       ├── create-transaction.dto.ts  ← @ValidateIf for conditional TRANSFER rules
+    │       └── update-transaction.dto.ts
+    └── budgets/            ← Phase 3: Spending limit management
 ```
 
 ---
